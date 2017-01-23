@@ -1,3 +1,4 @@
+
 package seedu.addressbook;
 
 /*
@@ -1029,9 +1030,9 @@ public class AddressBook {
      * @param person String array representing the person (used in internal data)
      */
     private static boolean isPersonDataValid(String[] person) {
-        return isPersonNameValid(person[PERSON_DATA_INDEX_NAME])
-                && isPersonPhoneValid(person[PERSON_DATA_INDEX_PHONE])
-                && isPersonEmailValid(person[PERSON_DATA_INDEX_EMAIL]);
+        return isPersonNameValid(getNameFromPerson(person))
+                && isPersonPhoneValid(getPhoneFromPerson(person))
+                && isPersonEmailValid(getEmailFromPerson(person));
     }
 
     /*

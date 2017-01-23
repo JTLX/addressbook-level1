@@ -486,12 +486,25 @@ public class AddressBook {
         final ArrayList<String[]> matchedPersons = new ArrayList<>();
         for (String[] person : getAllPersonsInAddressBook()) {
             final Set<String> wordsInName = new HashSet<>(splitByWhitespace(getNameFromPerson(person)));
-            if (!Collections.disjoint(wordsInName, keywords)) {
-                matchedPersons.add(person);
+            Boolean hasMatchFound = checkForKeywordMatch(keywords, wordsInName);
+            if(hasMatchFound) {
+            	matchedPersons.add(person);
             }
         }
         return matchedPersons;
     }
+
+	private static Boolean checkForKeywordMatch(Collection<String> keywords, final Set<String> wordsInName) {
+		Boolean hasMatchFound = false;
+		for(String keyword : keywords) {
+			for(String wordInName : wordsInName) {
+				if(keyword.equalsIgnoreCase(wordInName)) {
+					hasMatchFound = true;
+				}
+			}
+		}
+		return hasMatchFound;
+	}
 
     /**
      * Deletes person identified using last displayed index.

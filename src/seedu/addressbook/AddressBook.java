@@ -18,6 +18,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashSet;
 import java.util.Optional;
 import java.util.Scanner;
@@ -114,6 +115,10 @@ public class AddressBook {
     private static final String COMMAND_LIST_WORD = "list";
     private static final String COMMAND_LIST_DESC = "Displays all persons as a list with index numbers.";
     private static final String COMMAND_LIST_EXAMPLE = COMMAND_LIST_WORD;
+    
+    private static final String COMMAND_SORT_WORD = "sort";
+    private static final String COMMAND_SORT_DESC = "Displays all persons as a sorted list with index numbers.";
+    private static final String COMMAND_SORT_EXAMPLE = COMMAND_SORT_WORD;
 
     private static final String COMMAND_DELETE_WORD = "delete";
     private static final String COMMAND_DELETE_DESC = "Deletes a person identified by the index number used in "
@@ -368,13 +373,18 @@ public class AddressBook {
         final String[] commandTypeAndParams = splitCommandWordAndArgs(userInputString);
         final String commandType = commandTypeAndParams[0];
         final String commandArgs = commandTypeAndParams[1];
+        Boolean isSorted;
         switch (commandType) {
         case COMMAND_ADD_WORD:
             return executeAddPerson(commandArgs);
         case COMMAND_FIND_WORD:
             return executeFindPersons(commandArgs);
         case COMMAND_LIST_WORD:
-            return executeListAllPersonsInAddressBook();
+        	isSorted = false;
+            return executeListAllPersonsInAddressBook(isSorted);
+        case COMMAND_SORT_WORD:
+        	isSorted = true;
+        	return executeListAllPersonsInAddressBook(isSorted);
         case COMMAND_DELETE_WORD:
             return executeDeletePerson(commandArgs);
         case COMMAND_CLEAR_WORD:
@@ -452,7 +462,8 @@ public class AddressBook {
     private static String executeFindPersons(String commandArgs) {
         final Set<String> keywords = extractKeywordsFromFindPersonArgs(commandArgs);
         final ArrayList<String[]> personsFound = getPersonsWithNameContainingAnyKeyword(keywords);
-        showToUser(personsFound);
+        Boolean isSorted = false;
+        showToUser(personsFound, isSorted);
         return getMessageForPersonsDisplayedSummary(personsFound);
     }
 
@@ -486,25 +497,20 @@ public class AddressBook {
         final ArrayList<String[]> matchedPersons = new ArrayList<>();
         for (String[] person : getAllPersonsInAddressBook()) {
             final Set<String> wordsInName = new HashSet<>(splitByWhitespace(getNameFromPerson(person)));
-            Boolean hasMatchFound = checkForKeywordMatch(keywords, wordsInName);
+            Boolean hasMatchFound = false;
+            for(String keyword : keywords) {
+            	for(String wordInName : wordsInName) {
+            		if(keyword.equalsIgnoreCase(wordInName)) {
+            			hasMatchFound = true;
+            		}
+            	}
+            }
             if(hasMatchFound) {
             	matchedPersons.add(person);
             }
         }
         return matchedPersons;
     }
-
-	private static Boolean checkForKeywordMatch(Collection<String> keywords, final Set<String> wordsInName) {
-		Boolean hasMatchFound = false;
-		for(String keyword : keywords) {
-			for(String wordInName : wordsInName) {
-				if(keyword.equalsIgnoreCase(wordInName)) {
-					hasMatchFound = true;
-				}
-			}
-		}
-		return hasMatchFound;
-	}
 
     /**
      * Deletes person identified using last displayed index.
@@ -586,9 +592,9 @@ public class AddressBook {
      *
      * @return feedback display message for the operation result
      */
-    private static String executeListAllPersonsInAddressBook() {
+    private static String executeListAllPersonsInAddressBook(Boolean isSorted) {
         ArrayList<String[]> toBeDisplayed = getAllPersonsInAddressBook();
-        showToUser(toBeDisplayed);
+        showToUser(toBeDisplayed, isSorted);
         return getMessageForPersonsDisplayedSummary(toBeDisplayed);
     }
 
@@ -642,8 +648,8 @@ public class AddressBook {
      * The list will be indexed, starting from 1.
      *
      */
-    private static void showToUser(ArrayList<String[]> persons) {
-        String listAsString = getDisplayString(persons);
+    private static void showToUser(ArrayList<String[]> persons, Boolean isSorted) {
+        String listAsString = getDisplayString(persons, isSorted);
         showToUser(listAsString);
         updateLatestViewedPersonListing(persons);
     }
@@ -651,8 +657,11 @@ public class AddressBook {
     /**
      * Returns the display string representation of the list of persons.
      */
-    private static String getDisplayString(ArrayList<String[]> persons) {
+    private static String getDisplayString(ArrayList<String[]> persons, Boolean isSorted) {
         final StringBuilder messageAccumulator = new StringBuilder();
+        if(isSorted) {
+	        persons = sortPersonsByName(persons);
+        }
         for (int i = 0; i < persons.size(); i++) {
             final String[] person = persons.get(i);
             final int displayIndex = i + DISPLAYED_INDEX_OFFSET;
@@ -662,6 +671,23 @@ public class AddressBook {
         }
         return messageAccumulator.toString();
     }
+    
+    /**
+     * Returns a copy of persons which is sorted alphabetically by name.
+     * @param persons the original persons
+     * @return persons sorted by name
+     */
+	private static ArrayList<String[]> sortPersonsByName(ArrayList<String[]> persons) {
+		ArrayList<String[]> personsCopy = new ArrayList<>(persons);
+		Collections.sort(personsCopy, new Comparator<String[]>() {
+			@Override
+			public int compare(String[] personA, String[] personB) {
+				return personA[0].compareTo(personB[0]);
+			}
+		});
+		persons = personsCopy;
+		return persons;
+	}
 
     /**
      * Constructs a prettified listing element message to represent a person and their data.
